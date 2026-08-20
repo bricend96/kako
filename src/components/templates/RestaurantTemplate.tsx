@@ -28,14 +28,16 @@ export default function RestaurantTemplate({ profile }: { profile: Profile }) {
           <div className="space-y-2.5">
             {section.dishes.map((d, i) => {
               const tag = d.tag ? TAGS[d.tag] : null;
-              const epuise = d.tag === "epuise";
+              const epuise = d.tag === "epuise" || d.available === false;
               return (
                 <div key={i} className="rounded-2xl border border-[var(--border)] p-4 flex items-center gap-3">
                   <Photo src={d.imageUrl} theme={profile.theme} className="w-12 h-12 rounded-xl overflow-hidden shrink-0" iconSize={20} />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <p className="font-semibold text-[var(--text)]">{d.name}</p>
-                      {tag && <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${tag.cls}`}>{tag.label}</span>}
+                      {d.dailySpecial && <span className="text-[10px] px-2 py-0.5 rounded-full font-medium bg-amber-100 text-amber-700">🍲 Plat du jour</span>}
+                      {tag && !epuise && <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${tag.cls}`}>{tag.label}</span>}
+                      {d.available === false && <span className="text-[10px] px-2 py-0.5 rounded-full font-medium bg-gray-200 text-gray-500">Épuisé aujourd&apos;hui</span>}
                     </div>
                     {d.description && <p className="text-sm text-[var(--text-muted)]">{d.description}</p>}
                     <p className="text-sm mt-1 font-bold" style={{ color: profile.theme.accent }}>

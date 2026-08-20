@@ -7,6 +7,7 @@ import type { Reliability } from "@/lib/reliability";
 import { Star, MapPin, IdCard } from "@/components/icons";
 import { EvaluationPanel } from "./EvaluationPanel";
 import { SubscribeButton } from "./SubscribeButton";
+import { ProfileExtras } from "./ProfileExtras";
 import { Portal } from "./Portal";
 
 type TabKey = "accueil" | "avis" | "evaluation" | "localisation";
@@ -66,7 +67,12 @@ export function ProfileTabs({
       </div>
 
       {/* Contenu */}
-      {tab === "accueil" && children}
+      {tab === "accueil" && (
+        <>
+          <ProfileExtras profile={profile} />
+          {children}
+        </>
+      )}
 
       {tab === "avis" && (
         <div className="px-5 mt-6 animate-fade-up">

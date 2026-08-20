@@ -48,6 +48,29 @@ export function EvaluationPanel({
         <Stat label="Réclamations" value={String(complaintsCount)} danger={complaintsCount > 0} />
       </div>
 
+      {/* Historique public des litiges */}
+      <div className="rounded-2xl glass-card p-5">
+        <h3 className="font-bold text-[var(--text)]">Historique des litiges</h3>
+        {reportsCount + complaintsCount === 0 ? (
+          <p className="mt-2 text-sm text-green-400 flex items-center gap-2">
+            <span className="grid place-items-center w-6 h-6 rounded-full bg-green-500/15">✓</span>
+            Aucun litige signalé à ce jour.
+          </p>
+        ) : (
+          <div className="mt-3 space-y-2 text-sm">
+            <div className="flex items-center justify-between">
+              <span className="text-[var(--text-muted)]">Signalements d&apos;arnaque</span>
+              <span className="font-semibold text-[var(--text)]">{reportsCount}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-[var(--text-muted)]">Réclamations clients</span>
+              <span className="font-semibold text-[var(--text)]">{complaintsCount}</span>
+            </div>
+            <p className="text-xs text-[var(--text-dim)] pt-1">Ces litiges sont publics et pèsent sur l&apos;indice de fiabilité. En cours d&apos;examen par kako.</p>
+          </div>
+        )}
+      </div>
+
       {/* Clients non satisfaits */}
       <div className="rounded-2xl glass-card p-5">
         <h3 className="font-bold text-[var(--text)]">Vous n&apos;êtes pas satisfait ?</h3>

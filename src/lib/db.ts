@@ -32,7 +32,7 @@ export interface DB {
 // Incrémente ce numéro quand le contenu de démo change : au prochain
 // démarrage, la base de démo est régénérée automatiquement (pas besoin
 // de supprimer data/db.json à la main).
-const SEED_VERSION = 9;
+const SEED_VERSION = 10;
 
 const DATA_DIR = path.join(process.cwd(), "data");
 const DB_PATH = path.join(DATA_DIR, "db.json");
@@ -484,6 +484,18 @@ function enrichDemoPhotos(profiles: Profile[]) {
   };
 
   const verifiedSlugs = new Set(["awa-beaute", "chez-fatou", "king-flow", "studio-lumiere", "clinique-espoir"]);
+  const boostedSlugs: Record<string, string> = {
+    "king-flow": "Nouveau single dispo 🔥 Écoutez « Lagos Nights » maintenant !",
+    "studio-lumiere": "Forfait mariage -15% ce mois-ci. Réservez votre date !",
+    "chez-fatou": "Arrivage de nouveaux pagnes wax. Livraison Abidjan 24h.",
+  };
+  const coords: Record<string, [number, number]> = {
+    Dakar: [14.716, -17.467], Abidjan: [5.36, -4.008], Nairobi: [-1.286, 36.817],
+    Cotonou: [6.37, 2.39], Lagos: [6.524, 3.379], Bamako: [12.639, -8.0],
+    Lomé: [6.13, 1.22], Douala: [4.05, 9.7], Kinshasa: [-4.44, 15.27],
+    Kumasi: [6.69, -1.62], Ouagadougou: [12.37, -1.53],
+  };
+  const inTwoDays = new Date(Date.now() + 2 * 86400000 + 5 * 3600000).toISOString();
 
   for (const p of profiles) {
     // Avatar d'en-tête = logo monogramme LOCAL (100% hors-ligne, toujours net) :
@@ -508,6 +520,28 @@ function enrichDemoPhotos(profiles: Profile[]) {
     if (p.gallery) p.gallery = p.gallery.map((_, i) => pic(p.slug, `g${i}`, 600, 600));
 
     if (bigSocials[p.slug]) p.socials = bigSocials[p.slug];
+
+    // Géolocalisation (annuaire "près de moi")
+    const c = coords[p.city];
+    if (c) { p.lat = c[0]; p.lng = c[1]; }
+
+    // Stories de démo (photos)
+    p.stories = Array.from({ length: 4 }, (_, i) => ({ imageUrl: pic(p.slug, `story${i}`, 720, 1280), caption: `Nouveauté ${i + 1}` }));
+
+    // Boost + publicité locale
+    if (boostedSlugs[p.slug]) { p.boosted = true; p.adText = boostedSlugs[p.slug]; }
+
+    // Vente flash + codes promo (boutiques)
+    if (p.slug === "chez-fatou" || p.slug === "ferme-kwame") {
+      p.flashSale = { label: "Offre du week-end", percent: p.slug === "chez-fatou" ? 20 : 15, until: inTwoDays };
+      p.promoCodes = [{ code: "KAKO10", percent: 10 }, { code: "BIENVENUE", percent: 5 }];
+    }
+
+    // Menu du jour (restaurant)
+    if (p.slug === "mama-njeri" && p.menu?.[0]) {
+      p.dailyMenuNote = "Nyama Choma + Ugali, préparé ce matin";
+      p.menu[0].dishes.forEach((d, i) => { d.available = i !== 3; d.dailySpecial = i === 0; });
+    }
   }
 }
 

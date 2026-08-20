@@ -39,6 +39,15 @@ export function Catalog({ profile, products, sectionTitle = "Catalogue" }: { pro
   const [detail, setDetail] = useState<Product | null>(null);
   const [cart, setCart] = useState<Record<string, number>>({});
   const [cartOpen, setCartOpen] = useState(false);
+  const [promo, setPromo] = useState("");
+  const [promoPct, setPromoPct] = useState(0);
+  const [promoMsg, setPromoMsg] = useState<string | null>(null);
+
+  function applyPromo() {
+    const found = (profile.promoCodes ?? []).find((c) => c.code.toLowerCase() === promo.trim().toLowerCase());
+    if (found) { setPromoPct(found.percent); setPromoMsg(`Code appliqué : -${found.percent}%`); }
+    else { setPromoPct(0); setPromoMsg("Code promo invalide."); }
+  }
 
   const cats = useMemo(() => [...new Set(products.map((p) => p.category).filter(Boolean))] as string[], [products]);
 
@@ -66,11 +75,14 @@ export function Catalog({ profile, products, sectionTitle = "Catalogue" }: { pro
 
   const cartItems = Object.entries(cart).map(([id, qty]) => ({ p: products.find((x) => x.id === id)!, qty })).filter((x) => x.p);
   const count = cartItems.reduce((s, x) => s + x.qty, 0);
-  const total = cartItems.reduce((s, x) => s + x.p.price * x.qty, 0);
+  const subtotal = cartItems.reduce((s, x) => s + x.p.price * x.qty, 0);
+  const discount = Math.round((subtotal * promoPct) / 100);
+  const total = subtotal - discount;
 
   const recap =
     `Bonjour ${profile.businessName} 👋\nJe souhaite commander :\n` +
     cartItems.map((x) => `• ${x.qty}× ${x.p.name} (${money(x.p.price * x.qty, profile.currency)})`).join("\n") +
+    (promoPct ? `\nCode promo ${promo.trim().toUpperCase()} : -${money(discount, profile.currency)}` : "") +
     `\n\nTotal : ${money(total, profile.currency)}`;
 
   return (
@@ -175,9 +187,28 @@ export function Catalog({ profile, products, sectionTitle = "Catalogue" }: { pro
                   </div>
                 ))}
               </div>
-              <div className="flex items-center justify-between mt-4 pt-3 border-t border-[var(--border)]">
-                <span className="text-[var(--text-muted)]">Total</span>
-                <span className="font-bold text-[var(--text)]">{money(total, profile.currency)}</span>
+              {profile.promoCodes?.length ? (
+                <div className="mt-4">
+                  <div className="flex gap-2">
+                    <input value={promo} onChange={(e) => { setPromo(e.target.value); setPromoMsg(null); }} placeholder="Code promo"
+                      className="flex-1 rounded-xl border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2 text-sm text-[var(--text)] placeholder:text-[var(--text-dim)] outline-none focus:border-[var(--focus)] uppercase" />
+                    <button onClick={applyPromo} className="rounded-xl border border-[var(--border-strong)] px-4 text-sm font-semibold text-[var(--text)]">Appliquer</button>
+                  </div>
+                  {promoMsg && <p className={`text-xs mt-1 ${promoPct ? "text-green-400" : "text-red-400"}`}>{promoMsg}</p>}
+                </div>
+              ) : null}
+
+              <div className="mt-3 pt-3 border-t border-[var(--border)] space-y-1 text-sm">
+                {promoPct > 0 && (
+                  <>
+                    <div className="flex justify-between text-[var(--text-muted)]"><span>Sous-total</span><span>{money(subtotal, profile.currency)}</span></div>
+                    <div className="flex justify-between text-green-400"><span>Remise -{promoPct}%</span><span>−{money(discount, profile.currency)}</span></div>
+                  </>
+                )}
+                <div className="flex items-center justify-between">
+                  <span className="text-[var(--text-muted)]">Total</span>
+                  <span className="font-bold text-[var(--text)] text-base">{money(total, profile.currency)}</span>
+                </div>
               </div>
               <div className="mt-4">
                 <BuyButton

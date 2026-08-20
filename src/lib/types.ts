@@ -85,6 +85,24 @@ export interface Dish {
   emoji?: string;
   tag?: "populaire" | "nouveau" | "epuise";
   imageUrl?: string;
+  available?: boolean; // menu du jour : disponible aujourd'hui
+  dailySpecial?: boolean; // mis en avant dans le "menu du jour"
+}
+
+export interface Story {
+  imageUrl: string;
+  caption?: string;
+}
+
+export interface FlashSale {
+  label: string;
+  percent: number;
+  until: string; // ISO date/heure de fin
+}
+
+export interface PromoCode {
+  code: string;
+  percent: number;
 }
 
 export interface MenuSection {
@@ -184,6 +202,16 @@ export interface Profile {
   events?: EventDate[];
   tipsEnabled?: boolean; // artiste : bouton "Soutenir / pourboire"
   listings?: Listing[]; // immobilier
+
+  // Nouveautés
+  stories?: Story[];              // stories / statuts courts
+  flashSale?: FlashSale;          // vente flash avec compte à rebours
+  promoCodes?: PromoCode[];       // codes promo appliqués au panier
+  dailyMenuNote?: string;         // restaurant : accroche du menu du jour
+  lat?: number;                   // géolocalisation (annuaire "près de moi")
+  lng?: number;
+  boosted?: boolean;              // visibilité boostée (sponsorisé)
+  adText?: string;                // publicité locale du vendeur
 }
 
 export interface User {
