@@ -76,6 +76,7 @@ export interface Product {
   imageUrl?: string; // photo uploadée (compat)
   images?: string[]; // plusieurs images (URLs) ; en démo : emojis rendus en visuel
   category?: string; // catégorie définie par le vendeur (pour filtres)
+  flash?: boolean; // produit en vente flash
 }
 
 export interface Dish {
@@ -103,6 +104,7 @@ export interface FlashSale {
 export interface PromoCode {
   code: string;
   percent: number;
+  until?: string; // fin de validité (compte à rebours)
 }
 
 export interface MenuSection {

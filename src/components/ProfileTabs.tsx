@@ -7,7 +7,7 @@ import type { Reliability } from "@/lib/reliability";
 import { Star, MapPin, IdCard } from "@/components/icons";
 import { EvaluationPanel } from "./EvaluationPanel";
 import { SubscribeButton } from "./SubscribeButton";
-import { ProfileExtras } from "./ProfileExtras";
+import { Extras } from "./ProfileExtras";
 import { Portal } from "./Portal";
 
 type TabKey = "accueil" | "avis" | "evaluation" | "localisation";
@@ -69,7 +69,7 @@ export function ProfileTabs({
       {/* Contenu */}
       {tab === "accueil" && (
         <>
-          <ProfileExtras profile={profile} />
+          <Extras profile={profile} className="px-5 mt-5 hidden lg:block" />
           {children}
         </>
       )}

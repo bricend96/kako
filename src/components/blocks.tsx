@@ -3,6 +3,7 @@ import type { Profile, Review } from "@/lib/types";
 import { waLink, contactMessage } from "@/lib/format";
 import { Phone, MapPin, IdCard, Truck, Star, Image as ImageIcon } from "@/components/icons";
 import { SocialButton } from "@/components/social-icons";
+import { Extras, hasExtras } from "@/components/ProfileExtras";
 
 /** Vrai si la chaîne est une URL d'image (photo réelle) plutôt qu'un emoji. */
 export function isPhoto(s?: string): boolean {
@@ -189,17 +190,21 @@ export function LocationBlock({ profile }: { profile: Profile }) {
 /* ─────────────── Réseaux sociaux (icônes de marque) ─────────────── */
 export function Socials({ profile }: { profile: Profile }) {
   const socials = profile.socials?.filter((s) => s.url) ?? [];
-  if (!socials.length) return null;
+  if (!socials.length && !hasExtras(profile)) return null;
   return (
     <div className="px-5 mt-6 lg:hidden">
-      <p className="text-xs text-[var(--text-muted)] mb-2">
-        Retrouvez-nous aussi sur nos autres canaux — cliquez les liens ci-dessous
-      </p>
-      <div className="hscroll flex gap-2 -mx-5 px-5 pb-1">
-        {socials.map((s, i) => (
-          <SocialButton key={i} type={s.type} url={s.url} label={s.label} />
-        ))}
-      </div>
+      {socials.length > 0 && (
+        <>
+          <h3 className="text-sm font-bold text-[var(--text)] mb-2">Nos réseaux</h3>
+          <div className="hscroll flex gap-2 -mx-5 px-5 pb-1">
+            {socials.map((s, i) => (
+              <SocialButton key={i} type={s.type} url={s.url} label={s.label} />
+            ))}
+          </div>
+        </>
+      )}
+      {/* Stories (titrées) + réservation, sous les réseaux sociaux (mobile) */}
+      <Extras profile={profile} className={socials.length ? "mt-5" : ""} />
     </div>
   );
 }

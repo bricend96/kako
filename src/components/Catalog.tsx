@@ -5,6 +5,7 @@ import type { Profile, Product } from "@/lib/types";
 import { Image as ImgIcon } from "@/components/icons";
 import { BuyButton } from "@/components/BuyButton";
 import { CloseButton } from "@/components/blocks";
+import { Countdown } from "./Countdown";
 import { useLockScroll } from "./useLockScroll";
 import { Portal } from "./Portal";
 
@@ -42,6 +43,15 @@ export function Catalog({ profile, products, sectionTitle = "Catalogue" }: { pro
   const [promo, setPromo] = useState("");
   const [promoPct, setPromoPct] = useState(0);
   const [promoMsg, setPromoMsg] = useState<string | null>(null);
+  const [copied, setCopied] = useState<string | null>(null);
+
+  function copyCode(code: string) {
+    navigator.clipboard?.writeText(code).catch(() => {});
+    setCopied(code);
+    setTimeout(() => setCopied(null), 1800);
+  }
+  const flashProducts = products.filter((p) => p.flash && p.inStock !== false);
+  const fs = profile.flashSale;
 
   function applyPromo() {
     const found = (profile.promoCodes ?? []).find((c) => c.code.toLowerCase() === promo.trim().toLowerCase());
@@ -85,8 +95,68 @@ export function Catalog({ profile, products, sectionTitle = "Catalogue" }: { pro
     (promoPct ? `\nCode promo ${promo.trim().toUpperCase()} : -${money(discount, profile.currency)}` : "") +
     `\n\nTotal : ${money(total, profile.currency)}`;
 
+  const accent = profile.theme.accent;
+  const tint = { background: `${accent}14`, borderColor: `${accent}3a` };
+
   return (
-    <section className="px-5 mt-8 animate-fade-up">
+    <section className="px-5 mt-5 animate-fade-up">
+      {/* ── Promotions (juste sous le bloc livraison) ── */}
+      {(profile.promoCodes?.length || (fs && flashProducts.length > 0)) && (
+        <div className="space-y-3 mb-5">
+          {/* Type 1 : code promo */}
+          {profile.promoCodes?.length ? (() => {
+            const pc = profile.promoCodes[0];
+            return (
+              <div className="rounded-2xl p-4 border" style={tint}>
+                <div className="flex items-center justify-between gap-3 flex-wrap">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: accent }}>🎁 Code promo · -{pc.percent}%</p>
+                    <button onClick={() => copyCode(pc.code)}
+                      className="mt-1.5 inline-flex items-center gap-2 rounded-lg bg-[var(--surface-2)] border border-[var(--border)] px-3 py-1.5 font-mono font-extrabold text-lg tracking-[0.2em] active:scale-95 transition"
+                      style={{ color: accent }}>
+                      {pc.code}
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" aria-hidden><rect x="9" y="9" width="11" height="11" rx="2" /><path d="M5 15V5a2 2 0 0 1 2-2h10" /></svg>
+                    </button>
+                    <p className="text-[11px] text-[var(--text-muted)] mt-1">{copied === pc.code ? "Copié ! À saisir au panier." : "Cliquez pour copier, à saisir au panier"}</p>
+                  </div>
+                  {pc.until && <Countdown until={pc.until} />}
+                </div>
+              </div>
+            );
+          })() : null}
+
+          {/* Type 2 : ventes flash (produits) */}
+          {fs && flashProducts.length > 0 && (
+            <div className="rounded-2xl p-4 border" style={tint}>
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: accent }}>⚡ Vente flash · -{fs.percent}%</p>
+                  <p className="font-bold text-base leading-tight text-[var(--text)]">{fs.label}</p>
+                </div>
+                <Countdown until={fs.until} />
+              </div>
+              <div className="hscroll flex gap-3 mt-3 pb-1">
+                {flashProducts.map((p) => {
+                  const flashPrice = Math.round(p.price * (1 - fs.percent / 100));
+                  return (
+                    <button key={p.id} onClick={() => { add(p); setCartOpen(true); }}
+                      className="shrink-0 w-28 rounded-xl overflow-hidden bg-[var(--surface-2)] border border-[var(--border)] hover:border-[var(--border-strong)] text-left active:scale-95 transition">
+                      <Visual src={imagesOf(p)[0]} emoji={p.emoji} theme={profile.theme} className="aspect-square w-full" iconSize={26} />
+                      <div className="p-2">
+                        <p className="text-xs font-medium truncate text-[var(--text)]">{p.name}</p>
+                        <p className="text-[11px] line-through text-[var(--text-dim)]">{money(p.price, profile.currency)}</p>
+                        <p className="text-sm font-extrabold" style={{ color: accent }}>{money(flashPrice, profile.currency)}</p>
+                        <span className="mt-1 block text-center text-[10px] font-bold rounded-full py-0.5 text-white" style={{ background: accent }}>+ Ajouter</span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       <h2 className="text-lg font-bold text-[var(--text)] mb-3">{sectionTitle}</h2>
 
       {/* Recherche */}

@@ -32,7 +32,7 @@ export interface DB {
 // Incrémente ce numéro quand le contenu de démo change : au prochain
 // démarrage, la base de démo est régénérée automatiquement (pas besoin
 // de supprimer data/db.json à la main).
-const SEED_VERSION = 10;
+const SEED_VERSION = 11;
 
 const DATA_DIR = path.join(process.cwd(), "data");
 const DB_PATH = path.join(DATA_DIR, "db.json");
@@ -534,7 +534,10 @@ function enrichDemoPhotos(profiles: Profile[]) {
     // Vente flash + codes promo (boutiques)
     if (p.slug === "chez-fatou" || p.slug === "ferme-kwame") {
       p.flashSale = { label: "Offre du week-end", percent: p.slug === "chez-fatou" ? 20 : 15, until: inTwoDays };
-      p.promoCodes = [{ code: "KAKO10", percent: 10 }, { code: "BIENVENUE", percent: 5 }];
+      p.promoCodes = [{ code: "KAKO10", percent: 10, until: inTwoDays }, { code: "BIENVENUE", percent: 5, until: inTwoDays }];
+      // met les premiers produits disponibles en vente flash
+      let n = 0;
+      p.products?.forEach((pr) => { if (pr.inStock !== false && n < 3) { pr.flash = true; n++; } });
     }
 
     // Menu du jour (restaurant)

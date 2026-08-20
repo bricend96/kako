@@ -1,20 +1,45 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import type { Profile } from "@/lib/types";
 import { waLink } from "@/lib/format";
-import { WhatsAppIcon } from "@/components/blocks";
 import { Portal } from "./Portal";
 import { useLockScroll } from "./useLockScroll";
+import { Stories } from "./Stories";
 
 const BOOKING_CATEGORIES = new Set(["coiffeur", "sante", "artisan", "evenementiel", "hotellerie"]);
 
-export function ProfileExtras({ profile }: { profile: Profile }) {
+export function hasExtras(profile: Profile): boolean {
   return (
-    <div className="px-5 mt-5 space-y-4">
-      {profile.flashSale && <FlashSale profile={profile} />}
-      {profile.stories?.length ? <Stories profile={profile} /> : null}
-      {BOOKING_CATEGORIES.has(profile.category) && <BookingButton profile={profile} />}
+    !!profile.stories?.length ||
+    BOOKING_CATEGORIES.has(profile.category) ||
+    (profile.category === "restaurant" && !!profile.dailyMenuNote)
+  );
+}
+
+function MiniTitle({ children }: { children: React.ReactNode }) {
+  return <h3 className="text-sm font-bold text-[var(--text)] mb-2">{children}</h3>;
+}
+
+/** Extras d'une page : stories (titrées) + réservation (titrée) + menu du jour. */
+export function Extras({ profile, className = "" }: { profile: Profile; className?: string }) {
+  if (!hasExtras(profile)) return null;
+  return (
+    <div className={`space-y-5 ${className}`}>
+      {profile.stories?.length ? (
+        <div>
+          <MiniTitle>Nos stories</MiniTitle>
+          <Stories profile={profile} />
+        </div>
+      ) : null}
+
+      {BOOKING_CATEGORIES.has(profile.category) && (
+        <div>
+          <MiniTitle>Réserver une prestation</MiniTitle>
+          <BookingButton profile={profile} />
+        </div>
+      )}
+
       {profile.category === "restaurant" && profile.dailyMenuNote && (
         <div className="rounded-2xl p-3 text-sm text-white font-medium flex items-center gap-2"
           style={{ background: `linear-gradient(135deg, ${profile.theme.from}, ${profile.theme.to})` }}>
@@ -25,84 +50,11 @@ export function ProfileExtras({ profile }: { profile: Profile }) {
   );
 }
 
-/* ─────────────── Vente flash + compte à rebours ─────────────── */
-function FlashSale({ profile }: { profile: Profile }) {
-  const fs = profile.flashSale!;
-  const [left, setLeft] = useState(() => Math.max(0, new Date(fs.until).getTime() - Date.now()));
-  useEffect(() => {
-    const iv = setInterval(() => setLeft(Math.max(0, new Date(fs.until).getTime() - Date.now())), 1000);
-    return () => clearInterval(iv);
-  }, [fs.until]);
-  if (left <= 0) return null;
-
-  const s = Math.floor(left / 1000);
-  const d = Math.floor(s / 86400), h = Math.floor((s % 86400) / 3600), m = Math.floor((s % 3600) / 60), sec = s % 60;
-  const pad = (n: number) => String(n).padStart(2, "0");
-
-  return (
-    <div className="rounded-2xl p-4 text-white" style={{ background: `linear-gradient(135deg, ${profile.theme.from}, ${profile.theme.to})` }}>
-      <div className="flex items-center justify-between gap-2">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-wide opacity-90">⚡ Vente flash</p>
-          <p className="font-bold text-lg leading-tight">{fs.label} · -{fs.percent}%</p>
-        </div>
-        <div className="flex gap-1 text-center">
-          {(d > 0 ? [["j", d], ["h", h], ["m", m]] : [["h", h], ["m", m], ["s", sec]]).map(([u, v]) => (
-            <div key={u as string} className="bg-black/25 rounded-lg px-2 py-1 min-w-[38px]">
-              <div className="text-base font-bold tabular-nums">{pad(v as number)}</div>
-              <div className="text-[10px] opacity-80">{u}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ─────────────── Stories / statuts ─────────────── */
-function Stories({ profile }: { profile: Profile }) {
-  const stories = profile.stories!;
-  const [idx, setIdx] = useState<number | null>(null);
-  useLockScroll(idx !== null);
-
-  return (
-    <>
-      <div className="hscroll flex gap-3 -mx-1 px-1 pb-1">
-        {stories.map((st, i) => (
-          <button key={i} onClick={() => setIdx(i)} className="shrink-0 flex flex-col items-center gap-1 w-16">
-            <span className="w-16 h-16 rounded-full p-[2px]" style={{ background: `linear-gradient(135deg, ${profile.theme.from}, ${profile.theme.to})` }}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={st.imageUrl} alt="" className="w-full h-full rounded-full object-cover ring-2 ring-[var(--surface)]" />
-            </span>
-            <span className="text-[10px] text-[var(--text-muted)] truncate w-full text-center">{st.caption ?? "Story"}</span>
-          </button>
-        ))}
-      </div>
-
-      {idx !== null && (
-        <Portal>
-          <div className="fixed inset-0 z-[60] bg-black grid place-items-center" role="dialog" aria-modal="true">
-            <div className="relative w-full max-w-md h-full sm:h-[85vh] sm:rounded-2xl overflow-hidden">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={stories[idx].imageUrl} alt="" className="w-full h-full object-cover" />
-              <div className="absolute top-0 inset-x-0 flex gap-1 p-2">
-                {stories.map((_, i) => (
-                  <span key={i} className={`h-1 flex-1 rounded-full ${i <= idx ? "bg-white" : "bg-white/30"}`} />
-                ))}
-              </div>
-              {stories[idx].caption && (
-                <p className="absolute bottom-6 inset-x-0 text-center text-white font-medium px-6 drop-shadow">{stories[idx].caption}</p>
-              )}
-              <button onClick={() => setIdx((c) => (c! > 0 ? c! - 1 : c))} className="absolute left-0 top-0 h-full w-1/3" aria-label="Précédent" />
-              <button onClick={() => setIdx((c) => (c! < stories.length - 1 ? c! + 1 : null))} className="absolute right-0 top-0 h-full w-2/3" aria-label="Suivant" />
-              <button onClick={() => setIdx(null)} className="absolute top-3 right-3 grid place-items-center w-9 h-9 rounded-full bg-black/50 text-white text-xl" aria-label="Fermer">×</button>
-            </div>
-          </div>
-        </Portal>
-      )}
-    </>
-  );
-}
+const WaIcon = ({ size = 18 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+    <path d="M17.6 6.32A7.85 7.85 0 0 0 12.05 4C7.7 4 4.15 7.54 4.15 11.9c0 1.4.37 2.76 1.06 3.96L4 20l4.24-1.11a7.9 7.9 0 0 0 3.8.97h.01c4.35 0 7.9-3.54 7.9-7.9 0-2.11-.82-4.1-2.35-5.64Zm-5.55 12.16h-.01a6.56 6.56 0 0 1-3.34-.92l-.24-.14-2.48.65.66-2.42-.16-.25a6.53 6.53 0 0 1-1-3.5c0-3.62 2.95-6.56 6.58-6.56 1.76 0 3.41.69 4.65 1.93a6.52 6.52 0 0 1 1.93 4.64c0 3.62-2.95 6.57-6.57 6.57Z" />
+  </svg>
+);
 
 /* ─────────────── Réservation par créneaux ─────────────── */
 const SLOTS = ["09:00", "10:00", "11:00", "12:00", "14:00", "15:00", "16:00", "17:00", "18:00"];
@@ -156,7 +108,7 @@ function BookingButton({ profile }: { profile: Profile }) {
                 aria-disabled={!day || !slot}
                 className={`mt-4 w-full inline-flex items-center justify-center gap-2 rounded-xl text-white font-semibold py-3 ${!day || !slot ? "opacity-40 pointer-events-none" : ""}`}
                 style={{ background: "#25D366" }}>
-                <WhatsAppIcon size={18} /> Confirmer sur WhatsApp
+                <WaIcon size={18} /> Confirmer sur WhatsApp
               </a>
             </div>
           </div>
